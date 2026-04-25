@@ -7,84 +7,106 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
     <style>
-        :root { --main-color: #6e57e0; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; }
+        :root { --primary: #6e57e0; --bg: #f0f2f5; --text: #1c1e21; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); }
         
-        /* Auth Screen */
-        #auth-screen { position: fixed; inset: 0; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-        input { padding: 10px; margin: 5px; border: 1px solid #ddd; border-radius: 8px; width: 250px; }
-        button { padding: 10px 20px; background: var(--main-color); color: white; border: none; border-radius: 8px; cursor: pointer; }
+        /* Экран входа */
+        #auth-screen { position: fixed; inset: 0; background: #6e57e0; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .auth-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 350px; text-align: center; }
+        .auth-card input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .auth-buttons { display: flex; gap: 10px; margin-top: 15px; }
+        .auth-buttons button { flex: 1; padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-main { background: var(--primary); color: white; }
+        .btn-alt { background: #eee; color: #333; }
 
-        /* Main Layout */
-        #app { display: none; width: 100%; height: 100%; grid-template-columns: 300px 1fr; }
+        /* Основной интерфейс */
+        #app { display: none; width: 100%; height: 100%; grid-template-columns: 350px 1fr; }
         
-        /* Sidebar */
-        .sidebar { background: white; border-right: 1px solid #eee; display: flex; flex-direction: column; }
-        .user-profile { padding: 20px; border-bottom: 1px solid #eee; text-align: center; }
-        .avatar { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: #eee; }
-        .search-box { padding: 10px; }
-        .friends-list { flex: 1; overflow-y: auto; }
-        .friend-item { padding: 15px; border-bottom: 1px solid #f9f9f9; cursor: pointer; display: flex; align-items: center; }
-        .friend-item:hover { background: #f0edff; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; margin-left: auto; }
+        /* Боковая панель */
+        .sidebar { background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid #eee; background: #f8f9fa; }
+        .my-info { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; }
+        .my-info img { width: 45px; height: 45px; border-radius: 50%; background: #eee; }
+        .logout-link { font-size: 0.8rem; color: #ff4757; cursor: pointer; text-decoration: underline; }
+
+        .search-area { padding: 15px; border-bottom: 1px solid #eee; }
+        .search-area input { width: 100%; padding: 10px; border-radius: 20px; border: 1px solid #ddd; box-sizing: border-box; outline: none; }
+
+        .chats-list { flex: 1; overflow-y: auto; }
+        .chat-item { padding: 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-bottom: 1px solid #f5f5f5; transition: 0.2s; }
+        .chat-item:hover { background: #f0edff; }
+        .chat-item.active { background: #e8e4ff; border-left: 4px solid var(--primary); }
+        .user-status { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; margin-left: auto; }
         .online { background: #2ecc71; }
-        .offline { background: #95a5a6; }
+        .offline { background: #bdc3c7; }
 
-        /* Chat Area */
-        .chat-area { display: flex; flex-direction: column; background: #fff; }
-        .chat-header { padding: 15px; border-bottom: 1px solid #eee; font-weight: bold; }
-        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
-        .msg { margin-bottom: 10px; padding: 10px 15px; border-radius: 15px; max-width: 70%; word-wrap: break-word; }
-        .msg.sent { align-self: flex-end; background: var(--main-color); color: white; }
-        .msg.received { align-self: flex-start; background: #eee; color: #333; }
+        /* Окно чата */
+        .main-chat { display: flex; flex-direction: column; background: white; }
+        .chat-header { padding: 15px 25px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; font-weight: bold; background: #fff; }
+        #messages { flex: 1; padding: 20px; overflow-y: auto; background: #f9f9fb; display: flex; flex-direction: column; gap: 8px; }
         
-        .input-area { padding: 20px; display: flex; gap: 10px; border-top: 1px solid #eee; }
-        #msg-input { flex: 1; }
-        .emoji-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
+        .bubble { max-width: 70%; padding: 10px 16px; border-radius: 18px; font-size: 0.95rem; line-height: 1.4; position: relative; }
+        .sent { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 4px; }
+        .received { align-self: flex-start; background: #e4e6eb; color: black; border-bottom-left-radius: 4px; }
+
+        .input-bar { padding: 20px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px; align-items: center; }
+        .input-bar input { flex: 1; padding: 12px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
+        .input-bar button { background: var(--primary); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; }
+        .emoji-btn { background: none !important; color: #555 !important; font-size: 1.5rem !important; width: auto !important; }
     </style>
 </head>
 <body>
 
     <div id="auth-screen">
-        <h2>Gemini Messenger</h2>
-        <input type="email" id="auth-email" placeholder="Email">
-        <input type="password" id="auth-pass" placeholder="Пароль">
-        <input type="text" id="auth-user" placeholder="Юзернейм (без @)">
-        <div style="margin-top: 10px;">
-            <button onclick="handleAuth('login')">Войти</button>
-            <button onclick="handleAuth('register')">Регистрация</button>
+        <div class="auth-card">
+            <h2 style="margin-bottom: 5px;">Gemini Chat</h2>
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">Введите данные для входа</p>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Пароль">
+            <input type="text" id="username" placeholder="Уникальный @username">
+            <div class="auth-buttons">
+                <button class="btn-main" onclick="authAction('login')">Войти</button>
+                <button class="btn-alt" onclick="authAction('reg')">Регистрация</button>
+            </div>
         </div>
     </div>
 
     <div id="app">
         <div class="sidebar">
-            <div class="user-profile">
-                <img id="my-ava" class="avatar" src="https://ui-avatars.com/api/?name=User" onclick="uploadAva()">
-                <div id="my-name" style="font-weight: bold; margin-top: 5px;"></div>
-                <div id="my-username" style="color: #888; font-size: 0.9rem;"></div>
+            <div class="sidebar-header">
+                <div class="my-info">
+                    <img id="my-avatar" src="">
+                    <div>
+                        <div id="my-display-name" style="font-weight: bold;">Загрузка...</div>
+                        <span class="logout-link" onclick="logout()">Выйти из аккаунта</span>
+                    </div>
+                </div>
             </div>
-            <div class="search-box">
-                <input type="text" id="search-input" placeholder="Найти @username..." style="width: 90%;">
-                <button onclick="searchFriend()" style="width: 97%; margin-top: 5px;">Найти</button>
+            <div class="search-area">
+                <input type="text" id="search-user" placeholder="Поиск друга по @username..." onkeypress="if(event.key==='Enter') searchFriend()">
             </div>
-            <div class="friends-list" id="friends-list"></div>
+            <div class="chats-list" id="chats-list">
+                </div>
         </div>
 
-        <div class="chat-area">
-            <div class="chat-header" id="chat-with">Выберите чат</div>
-            <div id="messages"></div>
-            <div class="input-area">
-                <button class="emoji-btn" onclick="addEmoji('😊')">😊</button>
-                <input type="text" id="msg-input" placeholder="Сообщение...">
-                <button onclick="sendMessage()">Отправить</button>
+        <div class="main-chat">
+            <div class="chat-header">
+                <span id="target-name">Выберите, кому написать</span>
+                <span id="target-status" style="font-size: 0.8rem; font-weight: normal;"></span>
+            </div>
+            <div id="messages">
+                <div style="text-align: center; color: #999; margin-top: 50px;">Здесь будет ваша переписка</div>
+            </div>
+            <div class="input-bar">
+                <button class="emoji-btn" onclick="addEmoji()">😊</button>
+                <input type="text" id="msg-input" placeholder="Напишите сообщение..." onkeypress="if(event.key==='Enter') send()">
+                <button onclick="send()">➤</button>
             </div>
         </div>
     </div>
 
     <script>
-        // КОНФИГ
         const firebaseConfig = {
             apiKey: "AIzaSyBUQexpjqaVk9P4UFmLBHOdFsx_2qIvE5U",
             authDomain: "gpt-and-gemini.firebaseapp.com",
@@ -98,31 +120,35 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
-        const storage = firebase.storage();
 
-        let currentUser = null;
+        let me = null;
         let activeChatId = null;
 
-        // AUTH
-        async function handleAuth(type) {
-            const email = document.getElementById('auth-email').value;
-            const pass = document.getElementById('auth-pass').value;
-            const username = document.getElementById('auth-user').value.toLowerCase().trim();
+        // --- АВТОРИЗАЦИЯ ---
+        async function authAction(type) {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            const user = document.getElementById('username').value.toLowerCase().trim().replace('@', '');
+
+            if (!email || !pass) return alert("Заполните почту и пароль");
 
             try {
-                if (type === 'register') {
-                    const userCheck = await db.ref('usernames/' + username).once('value');
-                    if (userCheck.exists()) return alert('Username занят!');
-                    
+                if (type === 'reg') {
+                    if (!user) return alert("Для регистрации нужен username");
+                    const check = await db.ref('usernames/' + user).once('value');
+                    if (check.exists()) return alert("Этот ник уже занят!");
+
                     const res = await auth.createUserWithEmailAndPassword(email, pass);
-                    await db.ref('users/' + res.user.uid).set({
-                        username: username,
-                        displayName: username,
-                        photoURL: `https://ui-avatars.com/api/?name=${username}`,
+                    const userData = {
+                        uid: res.user.uid,
+                        username: user,
+                        displayName: user,
+                        photoURL: `https://ui-avatars.com/api/?name=${user}&background=random`,
                         isOnline: true,
                         lastSeen: Date.now()
-                    });
-                    await db.ref('usernames/' + username).set(res.user.uid);
+                    };
+                    await db.ref('users/' + res.user.uid).set(userData);
+                    await db.ref('usernames/' + user).set(res.user.uid);
                 } else {
                     await auth.signInWithEmailAndPassword(email, pass);
                 }
@@ -131,120 +157,131 @@
 
         auth.onAuthStateChanged(user => {
             if (user) {
-                currentUser = user;
+                me = user;
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('app').style.display = 'grid';
-                initUser();
+                setupPresence();
+                loadMyProfile();
+                listenToMyChats();
+            } else {
+                document.getElementById('auth-screen').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
             }
         });
 
-        async function initUser() {
-            const snap = await db.ref('users/' + currentUser.uid).once('value');
-            const data = snap.val();
-            document.getElementById('my-name').innerText = data.displayName;
-            document.getElementById('my-username').innerText = '@' + data.username;
-            document.getElementById('my-ava').src = data.photoURL;
+        function logout() {
+            if(me) db.ref('users/' + me.uid).update({ isOnline: false, lastSeen: Date.now() });
+            auth.signOut();
+        }
 
-            // Online status
-            const statusRef = db.ref('users/' + currentUser.uid);
+        // --- ПРОФИЛЬ И ОНЛАЙН ---
+        async function loadMyProfile() {
+            const snap = await db.ref('users/' + me.uid).once('value');
+            const data = snap.val();
+            document.getElementById('my-avatar').src = data.photoURL;
+            document.getElementById('my-display-name').innerText = data.displayName;
+        }
+
+        function setupPresence() {
+            const myStatusRef = db.ref('users/' + me.uid);
             db.ref('.info/connected').on('value', snap => {
                 if (snap.val() === false) return;
-                statusRef.onDisconnect().update({ isOnline: false, lastSeen: Date.now() }).then(() => {
-                    statusRef.update({ isOnline: true, lastSeen: Date.now() });
+                myStatusRef.onDisconnect().update({ isOnline: false, lastSeen: Date.now() }).then(() => {
+                    myStatusRef.update({ isOnline: true, lastSeen: Date.now() });
                 });
             });
-
-            loadMyChats();
         }
 
-        // ПОИСК И ДРУЗЬЯ
+        // --- ПОИСК И ЧАТЫ ---
         async function searchFriend() {
-            const target = document.getElementById('search-input').value.toLowerCase().trim();
-            const snap = await db.ref('usernames/' + target).once('value');
-            if (!snap.exists()) return alert('Пользователь не найден');
+            const username = document.getElementById('search-user').value.toLowerCase().trim().replace('@', '');
+            if (!username) return;
+
+            const snap = await db.ref('usernames/' + username).once('value');
+            if (!snap.exists()) return alert("Пользователь не найден");
+
+            const hisUid = snap.val();
+            if (hisUid === me.uid) return alert("Это вы!");
+
+            const chatId = [me.uid, hisUid].sort().join('_');
+            // Создаем связь у обоих
+            await db.ref(`userChats/${me.uid}/${chatId}`).set(true);
+            await db.ref(`userChats/${hisUid}/${chatId}`).set(true);
             
-            const friendUid = snap.val();
-            if (friendUid === currentUser.uid) return alert('Это вы!');
-            
-            const chatId = [currentUser.uid, friendUid].sort().join('_');
-            await db.ref(`userChats/${currentUser.uid}/${chatId}`).set(true);
-            await db.ref(`userChats/${friendUid}/${chatId}`).set(true);
-            openChat(chatId, target);
+            document.getElementById('search-user').value = '';
+            openChat(chatId, username);
         }
 
-        function loadMyChats() {
-            db.ref(`userChats/${currentUser.uid}`).on('value', async snap => {
-                const list = document.getElementById('friends-list');
+        function listenToMyChats() {
+            db.ref(`userChats/${me.uid}`).on('value', async snap => {
+                const list = document.getElementById('chats-list');
                 list.innerHTML = '';
-                const chats = snap.val() || {};
-                
-                for (let chatId in chats) {
-                    const friendUid = chatId.replace(currentUser.uid, '').replace('_', '');
+                const chatIds = snap.val();
+                if (!chatIds) return;
+
+                for (let id in chatIds) {
+                    const friendUid = id.replace(me.uid, '').replace('_', '');
                     const uSnap = await db.ref(`users/${friendUid}`).once('value');
                     const uData = uSnap.val();
-                    
-                    const div = document.createElement('div');
-                    div.className = 'friend-item';
-                    div.innerHTML = `
-                        <img src="${uData.photoURL}" class="avatar" style="width:40px;height:40px;margin-right:10px">
+
+                    const item = document.createElement('div');
+                    item.className = `chat-item ${activeChatId === id ? 'active' : ''}`;
+                    item.innerHTML = `
+                        <img src="${uData.photoURL}" style="width:40px;height:40px;border-radius:50%">
                         <div>
-                            <div style="font-weight:500">${uData.displayName}</div>
-                            <div style="font-size:0.8rem;color:#888">@${uData.username}</div>
+                            <div style="font-weight:bold">${uData.displayName}</div>
+                            <div style="font-size:0.8rem;color:#777">@${uData.username}</div>
                         </div>
-                        <div class="status-dot ${uData.isOnline ? 'online' : 'offline'}"></div>
+                        <div class="user-status ${uData.isOnline ? 'online' : 'offline'}"></div>
                     `;
-                    div.onclick = () => openChat(chatId, uData.displayName);
-                    list.appendChild(div);
+                    item.onclick = () => openChat(id, uData.displayName);
+                    list.appendChild(item);
                 }
             });
         }
 
-        // ЧАТ
+        // --- ПЕРЕПИСКА ---
         function openChat(chatId, name) {
             activeChatId = chatId;
-            document.getElementById('chat-with').innerText = 'Чат с: ' + name;
-            const msgContainer = document.getElementById('messages');
-            msgContainer.innerHTML = '';
-            
+            document.getElementById('target-name').innerText = name;
+            const container = document.getElementById('messages');
+            container.innerHTML = '';
+
+            // Подсвечиваем активный чат в списке
+            const items = document.querySelectorAll('.chat-item');
+            items.forEach(i => i.classList.remove('active'));
+
             db.ref(`messages/${chatId}`).off();
-            db.ref(`messages/${chatId}`).limitToLast(50).on('child_added', snap => {
+            db.ref(`messages/${chatId}`).on('child_added', snap => {
                 const m = snap.val();
-                const d = document.createElement('div');
-                d.className = `msg ${m.senderId === currentUser.uid ? 'sent' : 'received'}`;
-                d.innerText = m.text;
-                msgContainer.appendChild(d);
-                msgContainer.scrollTop = msgContainer.scrollHeight;
+                const div = document.createElement('div');
+                div.className = `bubble ${m.senderId === me.uid ? 'sent' : 'received'}`;
+                div.innerText = m.text;
+                container.appendChild(div);
+                container.scrollTop = container.scrollHeight;
             });
         }
 
-        async function sendMessage() {
-            const text = document.getElementById('msg-input').value.trim();
+        function send() {
+            const input = document.getElementById('msg-input');
+            const text = input.value.trim();
             if (!text || !activeChatId) return;
 
-            const msgData = {
-                senderId: currentUser.uid,
+            const newMsg = {
+                senderId: me.uid,
                 text: text,
                 timestamp: Date.now()
             };
 
-            await db.ref(`messages/${activeChatId}`).push(msgData);
-            await db.ref(`chats/${activeChatId}`).update({
-                lastMessage: msgData,
-                participants: { [currentUser.uid]: true } // Вторая сторона обновится сама при входе
+            db.ref(`messages/${activeChatId}`).push(newMsg);
+            db.ref(`chats/${activeChatId}`).update({
+                lastMessage: newMsg
             });
-            document.getElementById('msg-input').value = '';
+            input.value = '';
         }
 
-        function addEmoji(emoji) {
-            document.getElementById('msg-input').value += emoji;
-        }
-
-        function uploadAva() {
-            const url = prompt("Введите ссылку на фото (или используйте стандартную):");
-            if (url) {
-                db.ref('users/' + currentUser.uid).update({ photoURL: url });
-                document.getElementById('my-ava').src = url;
-            }
+        function addEmoji() {
+            document.getElementById('msg-input').value += '😊';
         }
     </script>
 </body>
